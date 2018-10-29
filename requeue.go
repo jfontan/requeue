@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/satori/go.uuid"
 	"github.com/src-d/borges"
@@ -98,10 +99,16 @@ func (s *SivaChecker) Check() error {
 		}()
 	}
 
+	log.Infof("querying database")
+	start := time.Now()
+
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return err
 	}
+
+	log.With(log.Fields{"duration": time.Since(start)}).
+		Infof("database query ended")
 
 	var counter uint64
 	var repo, init string
