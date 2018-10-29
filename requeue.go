@@ -1,8 +1,9 @@
 package requeue // import "github.com/jfontan/requeue"
 
 import (
+	"bufio"
 	"database/sql"
-	"io/ioutil"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -23,17 +24,27 @@ const (
 )
 
 func loadHashes(file string) (map[string]struct{}, error) {
-	data, err := ioutil.ReadFile(file)
+	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
 
-	list := strings.Split(strings.TrimSpace(string(data)), "\n")
-	hashes := make(map[string]struct{}, len(list))
+	defer f.Close()
 
-	for _, h := range list {
-		if h != "" {
-			hashes[strings.TrimSpace(strings.ToLower(h))] = struct{}{}
+	hashes := make(map[string]struct{})
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		t := strings.TrimSpace(strings.ToLower(scanner.Text()))
+		t = strings.TrimSuffix(t, ".siva")
+		p := strings.Split(t, "/")
+
+		if len(p) > 1 {
+			t = p[len(p)-1]
+		}
+
+		if t != "" {
+			hashes[t] = struct{}{}
 		}
 	}
 

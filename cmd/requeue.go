@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"os"
 
 	flags "github.com/jessevdk/go-flags"
 	"github.com/jfontan/requeue"
@@ -31,7 +30,7 @@ var opts struct {
 }
 
 func main() {
-	_, err := flags.ParseArgs(&opts, os.Args)
+	_, err := flags.Parse(&opts)
 	if e, ok := err.(*flags.Error); ok {
 		if e.Type == flags.ErrHelp {
 			return
@@ -56,6 +55,7 @@ func main() {
 		panic(err)
 	}
 
+	println("file", opts.Args.File)
 	checker, err := requeue.NewSivaChecker(opts.Args.File, db, q, opts.Dry)
 	if err != nil {
 		panic(err)
