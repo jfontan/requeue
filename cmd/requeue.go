@@ -2,60 +2,47 @@ package main
 
 import (
 	"database/sql"
-	"runtime"
-	"sync"
 
 	"github.com/jfontan/requeue"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // load postgres db driver
 	"github.com/sanity-io/litter"
+	queue "gopkg.in/src-d/go-queue.v1"
+	_ "gopkg.in/src-d/go-queue.v1/amqp"
 )
 
 const (
-	connectionString = "postgres://testing:testing@localhost/testing?sslmode=disable"
-	file             = "list-broken.txt"
+	dbConn    = "postgres://testing:testing@localhost/testing?sslmode=disable"
+	queueConn = "amqp://localhost:5672"
+	queueName = "borges"
+	file      = "list.txt"
 )
 
 func main() {
-	db, err := sql.Open("postgres", connectionString)
+	db, err := sql.Open("postgres", dbConn)
 	if err != nil {
 		panic(err)
 	}
 
-	checker, err := requeue.NewSivaChecker(file, db)
+	b, err := queue.NewBroker(queueConn)
 	if err != nil {
 		panic(err)
 	}
 
-	rows, err := db.Query("select repository_id, init from repository_references group by repository_id, init")
+	q, err := b.Queue(queueName)
 	if err != nil {
 		panic(err)
 	}
 
-	sivaChan := checker.Chan()
-	var wg sync.WaitGroup
-
-	for i := 0; i < runtime.NumCPU(); i++ {
-		wg.Add(1)
-		go func() {
-			checker.Worker()
-
-			wg.Done()
-		}()
+	checker, err := requeue.NewSivaChecker(file, db, q)
+	if err != nil {
+		panic(err)
 	}
 
-	var repo, init string
-	for rows.Next() {
-		err = rows.Scan(&repo, &init)
-		if err != nil {
-			panic(err)
-		}
-
-		sivaChan <- requeue.RepoInit{Repo: repo, Init: init}
+	err = checker.Check()
+	if err != nil {
+		panic(err)
 	}
-
-	close(sivaChan)
-	wg.Wait()
 
 	litter.Dump(checker.List())
 }

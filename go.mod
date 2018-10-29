@@ -50,7 +50,7 @@ require (
 	github.com/prometheus/common v0.0.0-20181020173914-7e9e6cabbd39 // indirect
 	github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d // indirect
 	github.com/sanity-io/litter v1.1.0
-	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b // indirect
+	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.1.1 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
@@ -79,7 +79,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.6.0 // indirect
 	gopkg.in/src-d/go-kallax.v1 v1.3.5
 	gopkg.in/src-d/go-log.v1 v1.0.1 // indirect
-	gopkg.in/src-d/go-queue.v1 v1.0.5 // indirect
+	gopkg.in/src-d/go-queue.v1 v1.0.5
 	gopkg.in/src-d/go-siva.v1 v1.3.0 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
