@@ -7,11 +7,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sanity-io/litter"
 	"github.com/satori/go.uuid"
 	"github.com/src-d/borges"
 	"github.com/src-d/borges/storage"
+	"gopkg.in/src-d/core-retrieval.v0/model"
 	kallax "gopkg.in/src-d/go-kallax.v1"
+	log "gopkg.in/src-d/go-log.v1"
 	queue "gopkg.in/src-d/go-queue.v1"
 )
 
@@ -54,9 +55,11 @@ type SivaChecker struct {
 	store borges.RepositoryStore
 
 	q queue.Queue
+
+	dry bool
 }
 
-func NewSivaChecker(file string, db *sql.DB, q queue.Queue) (*SivaChecker, error) {
+func NewSivaChecker(file string, db *sql.DB, q queue.Queue, dry bool) (*SivaChecker, error) {
 	hashes, err := loadHashes(file)
 	if err != nil {
 		return nil, err
@@ -70,6 +73,7 @@ func NewSivaChecker(file string, db *sql.DB, q queue.Queue) (*SivaChecker, error
 		c:      make(chan RepoInit),
 		db:     db,
 		store:  store,
+		q:      q,
 	}, nil
 }
 
@@ -88,6 +92,7 @@ func (s *SivaChecker) Check() error {
 		return err
 	}
 
+	var counter uint64
 	var repo, init string
 	for rows.Next() {
 		err = rows.Scan(&repo, &init)
@@ -97,6 +102,11 @@ func (s *SivaChecker) Check() error {
 		}
 
 		s.c <- RepoInit{Repo: repo, Init: init}
+
+		counter++
+		if counter%10000 == 0 {
+			log.With(log.Fields{"counter": counter}).Infof("still working")
+		}
 	}
 
 	close(s.c)
@@ -107,8 +117,6 @@ func (s *SivaChecker) Check() error {
 
 func (s *SivaChecker) Worker() {
 	for r := range s.c {
-		println("row", r.Repo, r.Init)
-
 		if s.repos.Contains(r.Repo) {
 			continue
 		}
@@ -118,12 +126,18 @@ func (s *SivaChecker) Worker() {
 			continue
 		}
 
-		s.Requeue(r.Repo)
+		err := s.Requeue(r.Repo)
+		if err != nil {
+			log.With(log.Fields{"id": r.Repo}).Errorf(err, "could not requeue")
+		}
+
 		s.repos.Add(r.Repo)
 	}
 }
 
 func (s *SivaChecker) Requeue(id string) error {
+	l := log.With(log.Fields{"id": id})
+
 	ulid, err := kallax.NewULIDFromText(id)
 	if err != nil {
 		return err
@@ -134,7 +148,12 @@ func (s *SivaChecker) Requeue(id string) error {
 		return err
 	}
 
-	println("requeue", id, r.Endpoints[0], r.Status)
+	if r.Status != model.Fetched {
+		l.Infof("repository not in fetched state")
+		return nil
+	}
+
+	l.Infof("requeuing job")
 
 	job := &borges.Job{RepositoryID: uuid.UUID(r.ID)}
 
@@ -150,10 +169,16 @@ func (s *SivaChecker) Requeue(id string) error {
 
 	qj.SetPriority(queue.PriorityNormal)
 
-	litter.Dump(qj)
+	if s.dry {
+		return nil
+	}
 
-	// return p.queue.Publish(qj)
-	return nil
+	err = s.q.Publish(qj)
+	if err != nil {
+		return err
+	}
+
+	return s.store.SetStatus(r, model.Pending)
 }
 
 func (s *SivaChecker) Chan() chan<- RepoInit {

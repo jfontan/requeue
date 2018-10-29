@@ -27,6 +27,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.5.1 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
+	github.com/jessevdk/go-flags v1.4.0
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/jpillora/backoff v0.0.0-20180909062703-3050d21c67d7 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0 // indirect
@@ -49,7 +50,6 @@ require (
 	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910 // indirect
 	github.com/prometheus/common v0.0.0-20181020173914-7e9e6cabbd39 // indirect
 	github.com/prometheus/procfs v0.0.0-20181005140218-185b4288413d // indirect
-	github.com/sanity-io/litter v1.1.0
 	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.1.1 // indirect
@@ -69,7 +69,7 @@ require (
 	golang.org/x/net v0.0.0-20181029044818-c44066c5c816 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2 // indirect
 	google.golang.org/grpc v1.16.0 // indirect
-	gopkg.in/src-d/core-retrieval.v0 v0.0.0-20180604160452-5252fe35bfba // indirect
+	gopkg.in/src-d/core-retrieval.v0 v0.0.0-20180604160452-5252fe35bfba
 	gopkg.in/src-d/framework.v0 v0.1.0 // indirect
 	gopkg.in/src-d/go-billy-siva.v4 v4.2.2 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.0 // indirect
@@ -78,14 +78,9 @@ require (
 	gopkg.in/src-d/go-git-fixtures.v3 v3.1.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.6.0 // indirect
 	gopkg.in/src-d/go-kallax.v1 v1.3.5
-	gopkg.in/src-d/go-log.v1 v1.0.1 // indirect
+	gopkg.in/src-d/go-log.v1 v1.0.1
 	gopkg.in/src-d/go-queue.v1 v1.0.5
 	gopkg.in/src-d/go-siva.v1 v1.3.0 // indirect
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-)
-
-replace (
-	github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
-	github.com/satori/go.uuid v1.2.0 => github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 )
