@@ -1,68 +1,14 @@
-package main // import "github.com/jfontan/requeue"
+package requeue // import "github.com/jfontan/requeue"
 
 import (
 	"database/sql"
 	"io/ioutil"
-	"runtime"
-	"sort"
 	"strings"
-	"sync"
 
-	"github.com/sanity-io/litter"
 	"github.com/src-d/borges"
 	"github.com/src-d/borges/storage"
 	kallax "gopkg.in/src-d/go-kallax.v1"
-
-	_ "github.com/lib/pq"
 )
-
-const (
-	connectionString = "postgres://testing:testing@localhost/testing?sslmode=disable"
-	file             = "list-broken.txt"
-)
-
-type Set struct {
-	l map[string]struct{}
-	m sync.RWMutex
-}
-
-func NewSet() *Set {
-	return &Set{
-		l: make(map[string]struct{}),
-	}
-}
-
-func (s *Set) Add(name string) {
-	s.m.Lock()
-	defer s.m.Unlock()
-
-	s.l[name] = struct{}{}
-}
-
-func (s *Set) Contains(name string) bool {
-	s.m.RLock()
-	defer s.m.RUnlock()
-
-	_, ok := s.l[name]
-	return ok
-}
-
-func (s *Set) List() []string {
-	l := make([]string, len(s.l))
-
-	s.m.RLock()
-
-	var i int
-	for k := range s.l {
-		l[i] = k
-		i++
-	}
-
-	s.m.RUnlock()
-
-	sort.Strings(l)
-	return l
-}
 
 func loadHashes(file string) (map[string]struct{}, error) {
 	data, err := ioutil.ReadFile(file)
@@ -153,48 +99,4 @@ func (s *SivaChecker) Chan() chan<- RepoInit {
 
 func (s *SivaChecker) List() []string {
 	return s.repos.List()
-}
-
-func main() {
-	db, err := sql.Open("postgres", connectionString)
-	if err != nil {
-		panic(err)
-	}
-
-	checker, err := NewSivaChecker(file, db)
-	if err != nil {
-		panic(err)
-	}
-
-	rows, err := db.Query("select repository_id, init from repository_references group by repository_id, init")
-	if err != nil {
-		panic(err)
-	}
-
-	sivaChan := checker.Chan()
-	var wg sync.WaitGroup
-
-	for i := 0; i < runtime.NumCPU(); i++ {
-		wg.Add(1)
-		go func() {
-			checker.Worker()
-
-			wg.Done()
-		}()
-	}
-
-	var repo, init string
-	for rows.Next() {
-		err = rows.Scan(&repo, &init)
-		if err != nil {
-			panic(err)
-		}
-
-		sivaChan <- RepoInit{repo, init}
-	}
-
-	close(sivaChan)
-	wg.Wait()
-
-	litter.Dump(checker.List())
 }
